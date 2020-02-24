@@ -3,6 +3,8 @@ import os
 import random
 import sys
 
+from session import Session
+
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler
 from telegram import Update
 
@@ -33,6 +35,7 @@ else:
 machineUsage = [[False, ""], [False, ""], [False, ""], [
     False, ""], [False, ""], [False, ""], [False, ""], [False, ""]]
 
+userSessions = Session()
 
 def start_handler(update: Update, context: CallbackContext):
     logger.info("User {} started bot".format(update.effective_user["id"]))
@@ -64,6 +67,7 @@ def use_handler(update: Update, context: CallbackContext):
     else:
         logger.info("User {} is using machine {}".format(
             username, machine_number))
+        userSessions.start_session(username, "/use")
 
         machine_in_use(machine_number, username)
         update.message.reply_text("What help do you need?" + context.args[0])
@@ -80,6 +84,9 @@ def status_handler(update: Update, context: CallbackContext):
             status = status + "0"
     update.message.reply_text(status)
 
+def print_sessions(update: Update, context: CallbackContext):
+    update.message.reply_text(userSessions.to_string())
+
 
 def machine_in_use(machine_number, username):
     machineUsage[machine_number - 1] = [True, username]
@@ -93,5 +100,6 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("random", random_handler))
     updater.dispatcher.add_handler(CommandHandler("use", use_handler))
     updater.dispatcher.add_handler(CommandHandler("status", status_handler))
+    updater.dispatcher.add_handler(CommandHandler("print", print_sessions))
 
     run(updater)
