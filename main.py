@@ -4,9 +4,10 @@ import random
 import sys
 
 from session import Session
+from machineFront import MachineFront
 
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler
-from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
+from telegram import Update, ReplyKeyboardMarkup
 
 # Enable logging
 logging.basicConfig(level=logging.INFO,
@@ -31,16 +32,48 @@ else:
     logger.error("no MODE specified")
     sys.exit(1)
 
+# format: [inUse: boolean, user: String]
+# machineUsage = [[False, ""], [False, ""], [False, ""], [
+#     False, ""], [False, ""], [False, ""], [False, ""], [False, ""]]
 
-machineUsage = [[False, ""], [False, ""], [False, ""], [
-    False, ""], [False, ""], [False, ""], [False, ""], [False, ""]]
+machine1 = MachineFront()
+machine2 = MachineFront()
+machine3 = MachineFront()
+machine4 = MachineFront()
+machine5 = MachineFront()
+machine6 = MachineFront()
+machine7 = MachineFront()
+machine8 = MachineFront()
+
+machineStorage = [machine1, machine2, machine3,
+                  machine4, machine5, machine6, machine7, machine8]
 
 userSessions = Session()
 
+
 def start_handler(update: Update, context: CallbackContext):
     logger.info("User {} started bot".format(update.effective_user["id"]))
-    update.message.reply_text(
-        "Hello from Python!\nPress /random to get random number")
+    custom_keyboard = [['/use', '/status'],
+                       ['/print', '/random', "/restart"]]
+    startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
+    context.bot.sendMessage(
+        chat_id=update.effective_user["id"], text="Hello from Python!\nPress /random to get random number", reply_markup=startKeyboard)
+    # update.message.reply_text(
+    #     "Hello from Python!\nPress /random to get random number", startKeyboard)
+
+
+def restart_handler(update: Update, context: CallbackContext):
+    logger.info("User {} restarted bot".format(update.effective_user["id"]))
+
+    username = update.effective_user["username"]
+    if(userSessions.user_exist(username)):
+        userSessions.end_session(username)
+
+    custom_keyboard = [['/start']]
+    startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
+
+    context.bot.sendMessage(
+        chat_id=update.effective_user["id"], text="Hello from Python!\nPress /random to get random number", reply_markup=startKeyboard)
 
 
 def random_handler(update: Update, context: CallbackContext):
@@ -51,45 +84,71 @@ def random_handler(update: Update, context: CallbackContext):
 
 
 def use_handler(update: Update, context: CallbackContext):
-    if (not context.args):
-        update.message.reply_text(
-            "Input machine number after the command. \nFor example, '/use 1' to use machine 1")
-        return
+    username = update.effective_user["username"]
+    #     logger.info("User {} entered an invalid machine number of {}".format(
+    #         username, machine_number))
+    logger.info("User {} is using machine".format(username))
+    userSessions.start_session(username, "/use")
+    custom_keyboard = [['1','2','3','4'],['5','6','7','8']]
+    startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
+    context.bot.sendMessage(
+        chat_id=update.effective_user["id"], text="Please choose your setting so I can notify you when it is done!", reply_markup=startKeyboard)
 
-    machine_number = int(context.args[0])
+
+chosenMachineNum = 0
+def choose_machine_handler(update: Update, context: CallbackContext):
+    global chosenMachineNum
+    userInput = update.message.text
     username = update.effective_user["username"]
 
-    if (machine_number > 8 or machine_number < 1):
-        logger.info("User {} entered an invalid machine number of {}".format(
-            username, machine_number))
-        update.message.reply_text("Machine number does not exist")
+    if (userInput.isdigit() and userSessions.get_last_command(username) == "/use"):
+        if(int(userInput) < 9 and int(userInput) > 0):
+            chosenMachine = machineStorage[int(userInput) - 1]
+            chosenMachineNum = int(userInput)
+            custom_keyboard = chosenMachine.settingsKeyboard
+            startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
+            userSessions.update_session(username, "machineNumber")
+            context.bot.sendMessage(
+                chat_id=update.effective_user["id"], text="Please choose your setting so I can notify you when it is done!", reply_markup=startKeyboard)
+
+    elif (userSessions.get_last_command(username) == "machineNumber"):
+        machineStorage[chosenMachineNum - 1].useMachine(username, userInput)
+        custom_keyboard1 = [['/restart']]
+        startKeyboard1 = ReplyKeyboardMarkup(custom_keyboard1)
+        userSessions.end_session(username)
+        logger.info("User {} is using {}".format(username, chosenMachineNum))
+        chosenMachineNum = 0
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Noted!", reply_markup=startKeyboard1)
 
     else:
-        logger.info("User {} is using machine {}".format(
-            username, machine_number))
-        userSessions.start_session(username, "/use")
-
-        machine_in_use(machine_number, username)
-        update.message.reply_text("What help do you need?" + context.args[0])
+        update.message.reply_text("Invalid input")
 
 
 def status_handler(update: Update, context: CallbackContext):
     username = update.effective_user["username"]
     logger.info("User {} asked for status".format(username))
     status = ""
-    for machine in machineUsage:
-        if machine[0]:
+    for machine in machineStorage:
+        if machine.isInUse():
             status = status + "1"
         else:
             status = status + "0"
     update.message.reply_text(status)
 
+
 def print_sessions(update: Update, context: CallbackContext):
-    update.message.reply_text(userSessions.to_string())
+    replyMessage = userSessions.to_string()
+    if not replyMessage:
+        update.message.reply_text("No sessions in progress")
+    else:
+        update.message.reply_text(replyMessage)
 
 
-def machine_in_use(machine_number, username):
-    machineUsage[machine_number - 1] = [True, username]
+# def machine_in_use(machine_number, username):
+#     machineUsage[machine_number - 1] = [True, username]
+# for machine in machineStorage:
+#     if machine.getEndTime() != 0:
 
 
 if __name__ == '__main__':
@@ -101,5 +160,8 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("use", use_handler))
     updater.dispatcher.add_handler(CommandHandler("status", status_handler))
     updater.dispatcher.add_handler(CommandHandler("print", print_sessions))
+    updater.dispatcher.add_handler(CommandHandler("restart", restart_handler))
+    updater.dispatcher.add_handler(MessageHandler(
+        Filters.text, choose_machine_handler))
 
     run(updater)

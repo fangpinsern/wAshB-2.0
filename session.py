@@ -1,6 +1,6 @@
-
 class Session:
 
+    useSteps = []
     sessions = []
 
     # Session constuctor
@@ -8,7 +8,7 @@ class Session:
         self.sessions = []
 
     # Check if the session exists
-    def session_exist(self, username):
+    def user_exist(self, username):
         exist = False
         for session in self.sessions:
             if session[0] == username:
@@ -20,12 +20,12 @@ class Session:
 
     def start_session(self, username, last_input):
         # check is session exist
-        if (not self.session_exist(username)):
+        if (not self.user_exist(username)):
             self.sessions.append([username, last_input])
 
     # Get last input of the user from the session
 
-    def get_last_input(self, username):
+    def get_last_command(self, username):
         lastInput = ""
         for session in self.sessions:
             if session[0] == username:
@@ -41,6 +41,17 @@ class Session:
                 self.sessions.pop(index)
                 break
             index = index + 1
+
+    def update_session(self, username, last_input):
+        for session in self.sessions:
+            if session[0] == username:
+                session[1] = last_input
+                break
+
+    def next_command_validation(self, username, command):
+        if not self.user_exist(username):
+            self.start_session(username, command)
+            self.next_command_validation(username, command)
 
     def to_string(self):
         str1 = ""
