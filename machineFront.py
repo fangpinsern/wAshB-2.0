@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+
 class MachineFront:
 
     settings = [["Cotton 60 with Prewash", 121], ["Cottons 90", 133], ["Cottons 40", 80], ["Cottons Cold", 80], ["Cottons Eco 60", 132], ["Cottons Eco 40", 120], [
@@ -28,8 +29,6 @@ class MachineFront:
         self.chatId = chatId
         self.startTime = datetime.now()
         duration = self.getTiming(setting)
-        print(duration)
-        print(setting)
         self.endTime = self.startTime + timedelta(minutes=duration)
         self.inUse = True
 
@@ -49,3 +48,49 @@ class MachineFront:
         return time
 
 
+# Top Load machine
+class MachineTop:
+
+    settings = [["30 Minutes", 30], ["1 Hour", 60],
+                ["1.5 Hours", 90], ["2 Hours", 120]]
+
+    settingsKeyboard = [["30 Minutes"], ["1 Hour"], ["1.5 Hours"], ["2 Hours"]]
+
+    inUse = False
+    startTime = 0
+    endTime = 0
+    username = ""
+    chatId = 0
+    hasReminded = False
+
+    def isInUse(self):
+        return self.inUse
+
+    def getStartTime(self):
+        return self.startTime
+
+    def getEndTime(self):
+        return self.endTime
+
+    def useMachine(self, username, chatId, setting):
+        self.username = username
+        self.chatId = chatId
+        self.startTime = datetime.now()
+        duration = self.getTiming(setting)
+        self.endTime = self.startTime + timedelta(minutes=duration)
+        self.inUse = True
+
+    def doneUse(self):
+        self.username = ""
+        self.startTime = 0
+        self.endTime = 0
+        self.chatId = 0
+        self.inUse = False
+
+    def getTiming(self, setting):
+        time = -1
+        for setting1 in self.settings:
+            if setting1[0] == setting:
+                time = setting1[1]
+
+        return time
