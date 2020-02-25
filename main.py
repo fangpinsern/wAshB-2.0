@@ -6,6 +6,8 @@ import sys
 from session import Session
 from machineFront import MachineFront
 
+from datetime import datetime
+
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
 from telegram import Update, ReplyKeyboardMarkup
 
@@ -100,6 +102,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
     global chosenMachineNum
     userInput = update.message.text
     username = update.effective_user["username"]
+    chatId = update.effective_user["id"]
 
     if (userInput.isdigit() and userSessions.get_last_command(username) == "/use"):
         if(int(userInput) < 9 and int(userInput) > 0):
@@ -112,7 +115,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text="Please choose your setting so I can notify you when it is done!", reply_markup=startKeyboard)
 
     elif (userSessions.get_last_command(username) == "machineNumber"):
-        machineStorage[chosenMachineNum - 1].useMachine(username, userInput)
+        machineStorage[chosenMachineNum - 1].useMachine(username, chatId, userInput)
         custom_keyboard1 = [['/restart']]
         startKeyboard1 = ReplyKeyboardMarkup(custom_keyboard1)
         userSessions.end_session(username)
@@ -150,11 +153,21 @@ def print_sessions(update: Update, context: CallbackContext):
 # for machine in machineStorage:
 #     if machine.getEndTime() != 0:
 
+def callback_minute(context: CallbackContext):
+    now = datetime.now()
+    for machine in machineStorage:
+        if(machine.chatId != 0 and not machine.hasReminded):
+            if machine.endTime < now:
+                chat_id=machine.chatId
+                context.bot.sendMessage(chat_id=chat_id, text='Your Laundry is done')
+                machine.doneUse()
+    logger.info("Scheduler have ran {}".format(now))
+
 
 if __name__ == '__main__':
     logger.info("Starting bot")
     updater = Updater(TOKEN, use_context=True)
-
+    j = updater.job_queue
     updater.dispatcher.add_handler(CommandHandler("start", start_handler))
     updater.dispatcher.add_handler(CommandHandler("random", random_handler))
     updater.dispatcher.add_handler(CommandHandler("use", use_handler))
@@ -164,4 +177,5 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 
+    job_minute = j.run_repeating(callback_minute, interval=10, first=0)
     run(updater)
