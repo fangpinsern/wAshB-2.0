@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-
 class MachineFront:
 
     settings = [["Cotton 60 with Prewash", 121], ["Cottons 90", 133], ["Cottons 40", 80], ["Cottons Cold", 80], ["Cottons Eco 60", 132], ["Cottons Eco 40", 120], [
