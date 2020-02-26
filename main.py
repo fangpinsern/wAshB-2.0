@@ -38,14 +38,14 @@ else:
 # machineUsage = [[False, ""], [False, ""], [False, ""], [
 #     False, ""], [False, ""], [False, ""], [False, ""], [False, ""]]
 
-machine1 = MachineFront()
-machine2 = MachineFront()
-machine3 = MachineFront()
-machine4 = MachineFront()
-machine5 = MachineFront()
-machine6 = MachineFront()
-machine7 = MachineFront()
-machine8 = MachineFront()
+machine1 = MachineFront("front")
+machine2 = MachineFront("front")
+machine3 = MachineFront("top")
+machine4 = MachineFront("front")
+machine5 = MachineFront("top")
+machine6 = MachineFront("front")
+machine7 = MachineFront("front")
+machine8 = MachineFront("front")
 
 machineStorage = [machine1, machine2, machine3,
                   machine4, machine5, machine6, machine7, machine8]
