@@ -7,12 +7,12 @@ class MachineFront:
         "Synthetics 60", 113], ["Synthetics 40", 105], ["Synthetics Cold", 66], ["Delicates 30", 65], ["Woolen 40", 54], ["Hand Wash 20", 41], ["Mini 30", 29]]
 
     frontSettingsKeyboard = [["Cotton 60 with Prewash"], ["Cottons 90"], ["Cottons 40"], ["Cottons Cold"], [
-        "Cottons Eco 60"], ["Cottons Eco 40"], ["Synthetics 60"], ["Synthetics 40"], ["Synthetics Cold"], ["Delicates 30"], ["Woolen 40"], ["Hand Wash 20"], ["Mini 30"]]
+        "Cottons Eco 60"], ["Cottons Eco 40"], ["Synthetics 60"], ["Synthetics 40"], ["Synthetics Cold"], ["Delicates 30"], ["Woolen 40"], ["Hand Wash 20"], ["Mini 30"],["/restart"]]
     
     topSettings = [["30 Minutes", 30], ["1 Hour", 60],
                 ["1.5 Hours", 90], ["2 Hours", 120]]
 
-    topSettingsKeyboard = [["30 Minutes"], ["1 Hour"], ["1.5 Hours"], ["2 Hours"]]
+    topSettingsKeyboard = [["30 Minutes"], ["1 Hour"], ["1.5 Hours"], ["2 Hours"],["/restart"]]
     
     inUse = False
     startTime = 0
@@ -27,10 +27,10 @@ class MachineFront:
     def __init__(self, typeOfMachine):
         self.typeOfMachine = typeOfMachine
         if typeOfMachine == "front":
-            self.settings = self.frontSettingsKeyboard
+            self.settings = self.frontSettings
             self.settingsKeyboard = self.frontSettingsKeyboard
         elif typeOfMachine == "top":
-            self.settings = self.topSettingsKeyboard
+            self.settings = self.topSettings
             self.settingsKeyboard = self.topSettingsKeyboard
 
         
