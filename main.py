@@ -161,18 +161,17 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text="Machine does not exist. Please try again", reply_markup=startKeyboard)
 
     else:
-        update.message.reply_text("Invalid input")
+        update.message.reply_text("Invalid input. You may want to restart with /restart command.")
 
 
 def status_handler(update: Update, context: CallbackContext):
     username = update.effective_user["username"]
     logger.info("User {} asked for status".format(username))
     status = ""
+    machineNum = 1
     for machine in machineStorage:
-        if machine.isInUse():
-            status = status + "1"
-        else:
-            status = status + "0"
+        status = status + machine.printStatus(machineNum)
+        machineNum = machineNum + 1
     update.message.reply_text(status)
 
 
@@ -202,6 +201,10 @@ def done_handler(update: Update, context: CallbackContext):
         context.bot.sendMessage(
             chat_id=update.effective_user["id"], text="Which machine how you completed using?", reply_markup=startKeyboard)
 
+
+# def info_handler(update: Update, context: CallbackContext):
+#     userSessions.start_session(username, "/info")
+#     custom_keyboa
 
 def print_sessions(update: Update, context: CallbackContext):
     replyMessage = userSessions.to_string()
@@ -235,6 +238,7 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("print", print_sessions))
     updater.dispatcher.add_handler(CommandHandler("restart", restart_handler))
     updater.dispatcher.add_handler(CommandHandler("done", done_handler))
+    # updater.dispatcher.add_handler(CommandHandler("info", info_handler))
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 

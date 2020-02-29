@@ -67,3 +67,9 @@ class MachineFront:
 
         return time
 
+    def printStatus(self, id):
+        if (self.inUse):
+            return "Machine {} is in use. Available after {}\n".format(id, self.endTime.strftime("%H:%M:%S"))
+        else:
+            return "Machine {} is available.\n".format(id)
+
