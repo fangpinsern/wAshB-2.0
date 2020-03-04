@@ -2,6 +2,7 @@ import logging
 import os
 import random
 import sys
+import pickle
 
 from session import Session
 from machineFront import MachineFront
@@ -48,11 +49,24 @@ machine6 = MachineFront("front")
 machine7 = MachineFront("front")
 machine8 = MachineFront("front")
 
+startMessage = "Hi, how may i help you today?\n"\
+    + "/start - Starts the bot and get help\n"\
+    + "/restart - Restarts the bot\n"\
+    + "/use - When you want to use a washing machine\n"\
+    + "/done - Inform if you are done with the washing machine\n"\
+    + "/info - Get information about the different washing machines\n"\
+    + "/status - Check availabilty of the washing machines in the laundrette\n\n"\
+    + "Your small gesture would make it more convienient for everyone in the block."
+
 machineStorage = [machine1, machine2, machine3,
                   machine4, machine5, machine6, machine7, machine8]
 manager = MachineManager(machineStorage)
 
-userSessions = Session()
+userSessions = Session("sessionStorage.pickle")
+
+#handle persistant storage
+
+#end handle persistant storage
 
 
 def start_handler(update: Update, context: CallbackContext):
@@ -61,7 +75,7 @@ def start_handler(update: Update, context: CallbackContext):
                        ['/print', "/restart"],["/info", "/done"]]
     startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
     context.bot.sendMessage(
-        chat_id=update.effective_user["id"], text="Hello from Python!\nPress /random to get random number", reply_markup=startKeyboard)
+        chat_id=update.effective_user["id"], text=startMessage, reply_markup=startKeyboard)
     # update.message.reply_text(
     #     "Hello from Python!\nPress /random to get random number", startKeyboard)
 
@@ -77,7 +91,7 @@ def restart_handler(update: Update, context: CallbackContext):
     startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
 
     context.bot.sendMessage(
-        chat_id=update.effective_user["id"], text="Hello from Python!\nPress /random to get random number", reply_markup=startKeyboard)
+        chat_id=update.effective_user["id"], text=startMessage, reply_markup=startKeyboard)
 
 
 def use_handler(update: Update, context: CallbackContext):

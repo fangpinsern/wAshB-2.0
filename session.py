@@ -1,11 +1,20 @@
+import pickle
+import os
+
 class Session:
 
     useSteps = []
     sessions = []
+    filename = ""
 
     # Session constuctor
-    def __init__(self):
+    def __init__(self, filename):
         self.sessions = []
+        self.filename = filename
+        if not os.path.isfile(filename):
+            print("File dont exist")
+            self.storeSession()
+        self.retrieveSession()
 
     # Check if the session exists
     def user_exist(self, username):
@@ -22,6 +31,7 @@ class Session:
         # check is session exist
         if (not self.user_exist(username)):
             self.sessions.append([username, last_input])
+        self.onChange()
 
     # Get last input of the user from the session
 
@@ -47,6 +57,7 @@ class Session:
             if session[0] == username:
                 session[1] = last_input
                 break
+        self.onChange()
 
     def next_command_validation(self, username, command):
         if not self.user_exist(username):
@@ -60,3 +71,18 @@ class Session:
             str1 = str1 + session[0] + session[1] + "\n"
 
         return str1
+
+    def storeSession(self):
+        pickle_out = open(self.filename, "wb")
+        pickle.dump(self.sessions, pickle_out)
+        print("storing session")
+        pickle_out.close()
+
+    def retrieveSession(self):
+        pickle_in = open(self.filename, "rb")
+        self.sessions = pickle.load(pickle_in)
+        print("retrieving session")
+        return True
+
+    def onChange(self):
+        self.storeSession()
