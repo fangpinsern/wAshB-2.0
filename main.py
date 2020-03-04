@@ -141,17 +141,24 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text="Machine does not exist. Please try again", reply_markup=startKeyboard)
 
     elif (userSessions.get_last_command(username) == "machineNumber"):
-        manager.useMachine(chosenMachineNum, username, chatId, userInput)
-        # chosenMach.useMachine(username, chatId, userInput)
-        logger.info("Machine start time is {} and end time is {}".format(
-            manager.getMachine(chosenMachineNum).getStartTime(), manager.getMachine(chosenMachineNum).getEndTime()))
-        custom_keyboard = [['/restart']]
-        startKeyboard1 = ReplyKeyboardMarkup(custom_keyboard)
-        userSessions.end_session(username)
-        logger.info("User {} is using {}".format(username, chosenMachineNum))
-        chosenMachineNum = 0
-        context.bot.sendMessage(
-            chat_id=update.effective_user["id"], text="Noted!", reply_markup=startKeyboard1)
+        if(manager.useMachine(chosenMachineNum, username, chatId, userInput)):
+            # chosenMach.useMachine(username, chatId, userInput)
+            logger.info("Machine start time is {} and end time is {}".format(
+                manager.getMachine(chosenMachineNum).getStartTime(), manager.getMachine(chosenMachineNum).getEndTime()))
+            custom_keyboard = [['/restart']]
+            startKeyboard1 = ReplyKeyboardMarkup(custom_keyboard)
+            userSessions.end_session(username)
+            logger.info("User {} is using {}".format(username, chosenMachineNum))
+            chosenMachineNum = 0
+            context.bot.sendMessage(
+                chat_id=update.effective_user["id"], text="Noted!", reply_markup=startKeyboard1)
+        else:
+            logger.info("Setting chosen is invalid")
+            custom_keyboard=manager.getMachine(chosenMachineNum).settingsKeyboard
+            startKeyboard = ReplyKeyboardMarkup(custom_keyboard)
+            context.bot.sendMessage(
+                    chat_id=update.effective_user["id"], text="Settings were invalid. Please choose the settings given below", reply_markup=startKeyboard)
+
 
     elif (userInput.isdigit() and userSessions.get_last_command(username) == "/done"):
         if(int(userInput) < 9 and int(userInput) > 0):

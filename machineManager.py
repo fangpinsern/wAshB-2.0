@@ -50,14 +50,21 @@ class MachineManager:
         return machinesInUse
 
     def useMachine(self, index, username, chatId, setting):
-        self.machinesArr[index - 1].useMachine(username, chatId, setting)
+        validUse = self.machinesArr[index - 1].useMachine(username, chatId, setting)
         self.onChange()
+        return validUse
 
     def doneUse(self, index, chatId):
         validDoneUse = self.machinesArr[index - 1].doneUse(chatId)
         if validDoneUse:
             self.onChange()
         return validDoneUse
+
+    def isAllInUse(self):
+        allInUse = True
+        for machine in self.machinesArr:
+            allInUse = allInUse and machine.isInUse()
+        return allInUse
 
     def storeMachineManager(self):
         pickle_out = open(self.filename, "wb")

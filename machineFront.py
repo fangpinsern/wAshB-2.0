@@ -71,12 +71,16 @@ class MachineFront:
         return self.chatId
 
     def useMachine(self, username, chatId, setting):
-        self.username = username
-        self.chatId = chatId
-        self.startTime = datetime.now()
+        validUse = False
         duration = self.getTiming(setting)
-        self.endTime = self.startTime + timedelta(minutes=duration)
-        self.inUse = True
+        if (duration != -1):
+            self.username = username
+            self.chatId = chatId
+            self.startTime = datetime.now()
+            self.endTime = self.startTime + timedelta(minutes=duration)
+            self.inUse = True
+            validUse = True
+        return validUse
 
     def doneUse(self, chatId):
         validDoneUse = chatId == self.chatId
