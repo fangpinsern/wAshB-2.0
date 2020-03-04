@@ -1,6 +1,10 @@
+import pickle
+import os
+
 class MachineManager:
 
     machinesArr=[]
+    filename = ""
 
     #addMachine
     #removeMachine
@@ -9,8 +13,14 @@ class MachineManager:
     #printstatus: return the status of the machines under management
     #sendreminder: sends reminder to the person
 
-    def __init__(self, machinesArr):
+    def __init__(self, machinesArr, filename):
         self.machinesArr = machinesArr
+        self.filename = filename
+        if not os.path.isfile(filename):
+            print("File dont exist")
+            self.storeMachineManager()
+        self.retrieveMachineManger()
+
 
     def getMachine(self, index):
         return self.machinesArr[index - 1]
@@ -38,3 +48,28 @@ class MachineManager:
             if machine.isInUse():
                 machinesInUse.append(machine)
         return machinesInUse
+
+    def useMachine(self, index, username, chatId, setting):
+        self.machinesArr[index - 1].useMachine(username, chatId, setting)
+        self.onChange()
+
+    def doneUse(self, index, chatId):
+        validDoneUse = self.machinesArr[index - 1].doneUse(chatId)
+        if validDoneUse:
+            self.onChange()
+        return validDoneUse
+
+    def storeMachineManager(self):
+        pickle_out = open(self.filename, "wb")
+        pickle.dump(self.machinesArr, pickle_out)
+        print("storing session")
+        pickle_out.close()
+
+    def retrieveMachineManger(self):
+        pickle_in = open(self.filename, "rb")
+        self.machinesArr = pickle.load(pickle_in)
+        print("retrieving session")
+        return True
+
+    def onChange(self):
+        self.storeMachineManager()

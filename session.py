@@ -12,7 +12,6 @@ class Session:
         self.sessions = []
         self.filename = filename
         if not os.path.isfile(filename):
-            print("File dont exist")
             self.storeSession()
         self.retrieveSession()
 
@@ -51,6 +50,7 @@ class Session:
                 self.sessions.pop(index)
                 break
             index = index + 1
+        self.onChange()
 
     def update_session(self, username, last_input):
         for session in self.sessions:
@@ -75,13 +75,11 @@ class Session:
     def storeSession(self):
         pickle_out = open(self.filename, "wb")
         pickle.dump(self.sessions, pickle_out)
-        print("storing session")
         pickle_out.close()
 
     def retrieveSession(self):
         pickle_in = open(self.filename, "rb")
         self.sessions = pickle.load(pickle_in)
-        print("retrieving session")
         return True
 
     def onChange(self):

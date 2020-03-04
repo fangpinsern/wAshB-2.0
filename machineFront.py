@@ -78,12 +78,15 @@ class MachineFront:
         self.endTime = self.startTime + timedelta(minutes=duration)
         self.inUse = True
 
-    def doneUse(self):
-        self.username = ""
-        self.startTime = 0
-        self.endTime = 0
-        self.chatId = 0
-        self.inUse = False
+    def doneUse(self, chatId):
+        validDoneUse = chatId == self.chatId
+        if(validDoneUse):
+            self.username = ""
+            self.startTime = 0
+            self.endTime = 0
+            self.chatId = 0
+            self.inUse = False
+        return validDoneUse
 
     def getTiming(self, setting):
         time = -1

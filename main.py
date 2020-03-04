@@ -60,7 +60,7 @@ startMessage = "Hi, how may i help you today?\n"\
 
 machineStorage = [machine1, machine2, machine3,
                   machine4, machine5, machine6, machine7, machine8]
-manager = MachineManager(machineStorage)
+manager = MachineManager(machineStorage, "machineManager.pickle")
 
 userSessions = Session("sessionStorage.pickle")
 
@@ -141,10 +141,10 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text="Machine does not exist. Please try again", reply_markup=startKeyboard)
 
     elif (userSessions.get_last_command(username) == "machineNumber"):
-        chosenMach = manager.getMachine(chosenMachineNum)
-        chosenMach.useMachine(username, chatId, userInput)
+        manager.useMachine(chosenMachineNum, username, chatId, userInput)
+        # chosenMach.useMachine(username, chatId, userInput)
         logger.info("Machine start time is {} and end time is {}".format(
-            chosenMach.getStartTime(), chosenMach.getEndTime()))
+            manager.getMachine(chosenMachineNum).getStartTime(), manager.getMachine(chosenMachineNum).getEndTime()))
         custom_keyboard = [['/restart']]
         startKeyboard1 = ReplyKeyboardMarkup(custom_keyboard)
         userSessions.end_session(username)
@@ -155,9 +155,9 @@ def choose_machine_handler(update: Update, context: CallbackContext):
 
     elif (userInput.isdigit() and userSessions.get_last_command(username) == "/done"):
         if(int(userInput) < 9 and int(userInput) > 0):
-            chosenMachine = manager.getMachine(int(userInput))
-            if chosenMachine.chatId == chatId:
-                chosenMachine.doneUse()
+            # chosenMachine = manager.getMachine(int(userInput))
+            validDoneUse = manager.doneUse(int(userInput), chatId)
+            if validDoneUse:
                 logger.info("User {} is done with machine {}".format(
                     username, userInput))
                 custom_keyboard = [['/restart']]
@@ -168,7 +168,8 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                     chat_id=update.effective_user["id"], text="Thank you! Hope to see you again soon", reply_markup=startKeyboard)
             else:
                 startKeyboard = ReplyKeyboardMarkup([['/restart']])
-                context.bot.sendMessage(chatId=update.effective_user["id"], text="You are not using this machine", reply_markup=startKeyboard)
+                userSessions.end_session(username)
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="You are not using this machine", reply_markup=startKeyboard)
         else:
             custom_keyboard = [['1', '2', '3', '4'],
                                ['5', '6', '7', '8'], ['/restart']]
@@ -240,7 +241,8 @@ def callback_minute(context: CallbackContext):
                     chat_id=chat_id, text='Your Laundry is done')
                 logger.info("User {} end time is {} and now is {}".format(
                     chat_id, machine.getEndTime(), now))
-                machine.doneUse()
+                machine.doneUse(chat_id)
+                manager.onChange()
     logger.info("Scheduler have ran {}".format(now))
 
 
