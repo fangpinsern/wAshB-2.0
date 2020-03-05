@@ -4,9 +4,9 @@ import random
 import sys
 import pickle
 
-from session import Session
-from machineFront import MachineFront
-from machineManager import MachineManager
+from session.session import Session
+from machineFront.machineFront import MachineFront
+from machineManager.machineManager import MachineManager
 
 from datetime import datetime
 
@@ -269,3 +269,4 @@ if __name__ == '__main__':
 
     job_minute = j.run_repeating(callback_minute, interval=10, first=0)
     run(updater)
+    

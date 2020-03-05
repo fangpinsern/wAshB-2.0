@@ -73,7 +73,7 @@ class MachineFront:
     def useMachine(self, username, chatId, setting):
         validUse = False
         duration = self.getTiming(setting)
-        if (duration != -1):
+        if (self.settingExist(setting)):
             self.username = username
             self.chatId = chatId
             self.startTime = datetime.now()
@@ -100,6 +100,14 @@ class MachineFront:
 
         return time
 
+    def checkSettingExist(self, setting):
+        settingExist = False
+        for setting1 in self.settings:
+            if setting1[0] == setting:
+                settingExist = True
+                break
+        return settingExist
+    
     def printStatus(self, id):
         if (self.inUse):
             return "Machine {} is in use. Available after {}\n".format(id, self.endTime.strftime("%H:%M:%S"))
