@@ -1,5 +1,8 @@
 import pickle
 import os
+import math
+
+from telegram import ReplyKeyboardMarkup
 
 class MachineManager:
 
@@ -38,7 +41,7 @@ class MachineManager:
         counter = 1
         for machine in self.machinesArr:
             if machine.getChatId() == chatId:
-                machinesUsedByUser.append([str(counter)])
+                machinesUsedByUser.append([machine.getName()])
             counter = counter + 1
         return machinesUsedByUser
 
@@ -49,13 +52,25 @@ class MachineManager:
                 machinesInUse.append(machine)
         return machinesInUse
 
+    def nameExist(self, name):
+        nameExist = False
+        for machine in self.machinesArr:
+            if machine.getName() == name:
+                nameExist = True
+        return nameExist
+
     def useMachine(self, index, username, chatId, setting):
         validUse = self.machinesArr[index - 1].useMachine(username, chatId, setting)
         self.onChange()
         return validUse
 
-    def doneUse(self, index, chatId):
-        validDoneUse = self.machinesArr[index - 1].doneUse(chatId)
+    def doneUse(self, name, chatId):
+        validDoneUse = False
+        for machine in self.machinesArr:
+            if machine.getName() == name:
+                machine.doneUse(chatId)
+                validDoneUse = True
+                break
         if validDoneUse:
             self.onChange()
         return validDoneUse
@@ -80,3 +95,29 @@ class MachineManager:
 
     def onChange(self):
         self.storeMachineManager()
+
+    def getKeyboard(self):
+        keyboardMain = []
+        numberOfPairs = math.ceil(len(self.machinesArr)/2)
+        for i in range(numberOfPairs):
+            keyboardMain.append([])
+        rowCount = 0
+        count = 0
+        for machine in self.machinesArr:
+            if count < 2:
+                keyboardMain[rowCount].append(machine.getName())
+                count = count + 1
+            else:
+                rowCount = rowCount + 1
+                count = 0
+
+        keyboardMain.append(['/restart'])
+        return ReplyKeyboardMarkup(keyboardMain)
+
+    def getMachineUsedByUserKeyboard(self, chatId):
+        keyboardMain = self.getMachineUsedByUser(chatId)
+
+        keyboardMain.append(["/restart"])
+
+        return ReplyKeyboardMarkup(keyboardMain)
+

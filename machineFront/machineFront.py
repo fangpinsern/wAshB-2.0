@@ -34,6 +34,7 @@ class MachineFront:
     topSettingsKeyboard = [["30 Minutes"], ["1 Hour"],
                            ["1.5 Hours"], ["2 Hours"], ["/restart"]]
 
+    name = "default"
     inUse = False
     startTime = 0
     endTime = 0
@@ -45,8 +46,9 @@ class MachineFront:
     settingsKeyboard = [["You are not suppose to see this"]]
     infoMessage = "The info message has not been configured yet."
 
-    def __init__(self, typeOfMachine):
+    def __init__(self, typeOfMachine, name):
         self.typeOfMachine = typeOfMachine
+        self.name = name
         if typeOfMachine == "front":
             self.settings = self.frontSettings
             self.settingsKeyboard = self.frontSettingsKeyboard
@@ -70,10 +72,13 @@ class MachineFront:
     def getChatId(self):
         return self.chatId
 
+    def getName(self):
+        return self.name
+
     def useMachine(self, username, chatId, setting):
         validUse = False
         duration = self.getTiming(setting)
-        if (self.settingExist(setting)):
+        if (self.checkSettingExist(setting)):
             self.username = username
             self.chatId = chatId
             self.startTime = datetime.now()
