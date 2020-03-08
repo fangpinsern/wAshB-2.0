@@ -74,8 +74,6 @@ class Session:
                 passedArgument = session[2]
                 break
         return passedArgument
-                
-        
 
     def next_command_validation(self, username, command):
         if not self.user_exist(username):

@@ -129,3 +129,15 @@ class MachineManager:
 
         return ReplyKeyboardMarkup(keyboardMain)
 
+
+    def addMachine(self, machine):
+        # name has to be unique
+        validAddMachine = False
+        if not self.nameExist(machine.getName()):
+            self.machinesArr.append(machine)
+            self.onChange()
+            validAddMachine=True
+
+        return validAddMachine
+        
+

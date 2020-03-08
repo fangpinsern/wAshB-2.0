@@ -8,7 +8,7 @@ from session.session import Session
 from machineFront.machineFront import MachineFront
 from machineManager.machineManager import MachineManager
 from admin.adminManager import AdminManager
-from botUtils.keyboards import mainMenuKeyboard, startKeyboard, restartKeyboard
+from botUtils.keyboards import mainMenuKeyboard, startKeyboard, restartKeyboard, machineTypeKeyboard
 from botUtils.messages import startMessage, useMachineQuestion, machineInUseError, machineDoesNotExistError, invalidSettingError, invalidUserError, invalidMachineError, invalidInputError, userNotUsingMachinesError, doneWithMachineMessage, machineInfoMessage
 from datetime import datetime
 
@@ -119,7 +119,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text="Noted!", reply_markup=restartKeyboard)
         else:
             logger.info("Setting chosen is invalid")
-            custom_keyboard=manager.getMachine(chosenMachineNum).settingsKeyboard
+            custom_keyboard=manager.getMachineByName(chosenMachineNum).settingsKeyboard
             settingKeyboard = ReplyKeyboardMarkup(custom_keyboard)
             context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text=invalidSettingError, reply_markup=settingKeyboard)
@@ -140,9 +140,9 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             context.bot.sendMessage(
                 chat_id=update.effective_user["id"], text=invalidMachineError, reply_markup=manager.getMachineUsedByUserKeyboard(chatId))
 
-    elif (userInput.isdigit() and userSessions.get_last_command(username) == "/info"):
-        if(int(userInput) < 9 and int(userInput) > 0):
-            chosenMachine = manager.getMachine(int(userInput))
+    elif (userSessions.get_last_command(username) == "/info"):
+        if(manager.nameExist(userInput)):
+            chosenMachine = manager.getMachineByName(userInput)
             context.bot.sendMessage(chat_id=update.effective_user["id"], text=chosenMachine.getInfoMessage(), reply_markup=restartKeyboard)
             
     elif (userSessions.get_last_command(username) == "/addAdmin"):
@@ -175,9 +175,29 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text="User is not an admin. Use /show to see your your admins!", reply_markup=restartKeyboard)
 
-    # elif (userSessions.get_last_command(username) == "/addMachineName"):
-    #     if adminManager.adminIdExist(username):
-    #         manager.addMachine()
+    elif (userSessions.get_last_command(username) == "/addMachineType"):
+        if adminManager.adminIdExist(username):
+            if(userInput != "front" or userInput != "top"):
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine Type invalid. Please use the options given", reply_markup=machineTypeKeyboard)
+            else:
+                userSessions.update_session(username, "/addMachineName")
+                userSessions.add_passing_arguments(username, [userInput])
+                logger.info("User {} has named the machine {}".format(username, userInput))
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="What would you name the machine?", reply_markup=restartKeyboard)
+
+    elif (userSessions.get_last_command(username) == "/addMachineName"):
+        if adminManager.adminIdExist(username):
+            machineType = userSessions.get_passing_arguments(username)[0]
+            if manager.nameExist(userInput):
+                logger.info("Machine name exist")
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="This name already exist. Please try again", reply_markup=restartKeyboard)
+            else:
+                newMachine = MachineFront(machineType, userInput)
+                manager.addMachine(newMachine)
+                logger.info("Machine has been added")
+                userSessions.end_session(username)
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine has been added! You can see it using the /status command", reply_markup=ReplyKeyboardRemove())
+
     
     else:
         update.message.reply_text(invalidInputError)
@@ -274,16 +294,16 @@ def show_admin_handler(update: Update, context: CallbackContext):
             chat_id=update.effective_user["id"], text=listOfAdmins, reply_markup=restartKeyboard)
 
 
-## AdminHandlers
-# def add_machine_handler(update: Update, context: CallbackContext):
-#     username = update.effective_user["username"]
-#     if adminManager.adminIdExist(username):
-#         logger.info("User {} would like to add machines".format(username))
-#         userSessions.start_session(username, "/addMachineName")
-#         context.bot.sendMessage(
-#             chat_id=update.effective_user["id"], text="Name the machine", reply_markup=ReplyKeyboardRemove())  
-#     else:
-#         logger.info("User {} does not have the rights to add machines".format(username))
+# AdminHandlers
+def add_machine_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.adminIdExist(username):
+        logger.info("User {} would like to add machines".format(username))
+        userSessions.start_session(username, "/addMachineType")
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="What is the type of the machine?", reply_markup=machineTypeKeyboard)  
+    else:
+        logger.info("User {} does not have the rights to add machines".format(username))
 
 # def add_machine_handler(update: Update, context: CallbackContext):
 #     username = update.effective_user["username"]
@@ -317,7 +337,7 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("show", show_admin_handler))
 
     # admin commands
-    
+    updater.dispatcher.add_handler(CommandHandler("addMachine", add_machine_handler))
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 

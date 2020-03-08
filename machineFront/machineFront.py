@@ -115,9 +115,9 @@ class MachineFront:
     
     def printStatus(self, id):
         if (self.inUse):
-            return "Machine {} is in use. Available after {}\n".format(id, self.endTime.strftime("%H:%M:%S"))
+            return "Machine {} is in use. Available after {}\n".format(self.name, self.endTime.strftime("%H:%M:%S"))
         else:
-            return "Machine {} is available.\n".format(id)
+            return "Machine {} is available.\n".format(self.name)
 
     def printInfo(self):
         printString = "This is a washing machine "
