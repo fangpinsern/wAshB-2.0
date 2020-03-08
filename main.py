@@ -80,26 +80,27 @@ def use_handler(update: Update, context: CallbackContext):
         chat_id=update.effective_user["id"], text=useMachineQuestion, reply_markup=manager.getKeyboard())
 
 
-chosenMachineNum = 0
+# chosenMachineNum = 0
 
 #handles all general queries that are not commands
 def choose_machine_handler(update: Update, context: CallbackContext):
-    global chosenMachineNum
+    # global chosenMachineNum
     userInput = update.message.text
     username = update.effective_user["username"]
     chatId = update.effective_user["id"]
 
-    if (userInput.isdigit() and userSessions.get_last_command(username) == "/use"):
-        if(int(userInput) < 9 and int(userInput) > 0):
-            chosenMachine = manager.getMachine(int(userInput))
+    if (userSessions.get_last_command(username) == "/use"):
+        if(manager.nameExist(userInput)):
+            chosenMachine = manager.getMachineByName(userInput)
             if (chosenMachine.isInUse()):
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text=machineInUseError, reply_markup=manager.getKeyboard())
             else:
-                chosenMachineNum = int(userInput)
+                chosenMachineName = userInput
                 custom_keyboard = chosenMachine.settingsKeyboard
                 settingKeyboard = ReplyKeyboardMarkup(custom_keyboard)
                 userSessions.update_session(username, "machineNumber")
+                userSessions.add_passing_arguments(username, [userInput])
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text="Please choose your setting so I can notify you when it is done!", reply_markup=settingKeyboard)
 
@@ -108,12 +109,12 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 chat_id=update.effective_user["id"], text=machineDoesNotExistError, reply_markup=manager.getKeyboard())
 
     elif (userSessions.get_last_command(username) == "machineNumber"):
+        chosenMachineNum = userSessions.get_passing_arguments(username)[0]
         if(manager.useMachine(chosenMachineNum, username, chatId, userInput)):
             logger.info("Machine start time is {} and end time is {}".format(
-                manager.getMachine(chosenMachineNum).getStartTime(), manager.getMachine(chosenMachineNum).getEndTime()))
+                manager.getMachineByName(chosenMachineNum).getStartTime(), manager.getMachineByName(chosenMachineNum).getEndTime()))
             userSessions.end_session(username)
             logger.info("User {} is using {}".format(username, chosenMachineNum))
-            chosenMachineNum = 0
             context.bot.sendMessage(
                 chat_id=update.effective_user["id"], text="Noted!", reply_markup=restartKeyboard)
         else:
@@ -131,7 +132,6 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 logger.info("User {} is done with machine {}".format(
                     username, userInput))
                 userSessions.end_session(username)
-                chosenMachineNum = 0
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text="Thank you! Hope to see you again soon", reply_markup=restartKeyboard)
             else:
@@ -174,6 +174,10 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 logger.info("The admin user does not exist. Or there is an error in removing")
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text="User is not an admin. Use /show to see your your admins!", reply_markup=restartKeyboard)
+
+    # elif (userSessions.get_last_command(username) == "/addMachineName"):
+    #     if adminManager.adminIdExist(username):
+    #         manager.addMachine()
     
     else:
         update.message.reply_text(invalidInputError)
@@ -269,6 +273,27 @@ def show_admin_handler(update: Update, context: CallbackContext):
         context.bot.sendMessage(
             chat_id=update.effective_user["id"], text=listOfAdmins, reply_markup=restartKeyboard)
 
+
+## AdminHandlers
+# def add_machine_handler(update: Update, context: CallbackContext):
+#     username = update.effective_user["username"]
+#     if adminManager.adminIdExist(username):
+#         logger.info("User {} would like to add machines".format(username))
+#         userSessions.start_session(username, "/addMachineName")
+#         context.bot.sendMessage(
+#             chat_id=update.effective_user["id"], text="Name the machine", reply_markup=ReplyKeyboardRemove())  
+#     else:
+#         logger.info("User {} does not have the rights to add machines".format(username))
+
+# def add_machine_handler(update: Update, context: CallbackContext):
+#     username = update.effective_user["username"]
+#     if adminManager.adminIdExist(username):
+#         logger.info("User {} would like to add machines".format(username))
+#         context.bot.sendMessage(
+#             chat_id=update.effective_user["id"], text="Name the machine", reply_markup=ReplyKeyboardRemove())  
+#     else:
+#         logger.info("User {} does not have the rights to add machines".format(username))
+
         
 
 
@@ -290,6 +315,8 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("addAdmin", add_admin_handler))
     updater.dispatcher.add_handler(CommandHandler("removeAdmin", remove_admin_handler))
     updater.dispatcher.add_handler(CommandHandler("show", show_admin_handler))
+
+    # admin commands
     
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))

@@ -8,13 +8,11 @@ class AdminManager:
     def __init__(self, firstAdmin):
         self.adminArr.append(firstAdmin)
         self.master = firstAdmin
-
-    def adminIdExist(self, username):
-        return username in self.adminArr
     
     def isMaster(self, masterId):
         return self.master == masterId
 
+    ## master functions
     def addAdmin(self, username):
         validAdmin = False
         if not self.adminIdExist(username):
@@ -52,6 +50,11 @@ class AdminManager:
                 count = count + 1
 
         return listOfAdmins
+
+    ## adminFunctions
+    def adminIdExist(self, username):
+        return username in self.adminArr
+    
 
 
 

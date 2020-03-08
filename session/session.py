@@ -29,7 +29,7 @@ class Session:
     def start_session(self, username, last_input):
         # check is session exist
         if (not self.user_exist(username)):
-            self.sessions.append([username, last_input])
+            self.sessions.append([username, last_input, []])
         self.onChange()
 
     # Get last input of the user from the session
@@ -58,6 +58,24 @@ class Session:
                 session[1] = last_input
                 break
         self.onChange()
+
+    def add_passing_arguments(self, username, passedArgs):
+        for session in self.sessions:
+            if session[0] == username:
+                for args in passedArgs:
+                    session[2].append(args)
+            break
+        self.onChange()
+
+    def get_passing_arguments(self, username):
+        passedArgument = []
+        for session in self.sessions:
+            if session[0] == username:
+                passedArgument = session[2]
+                break
+        return passedArgument
+                
+        
 
     def next_command_validation(self, username, command):
         if not self.user_exist(username):

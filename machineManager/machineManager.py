@@ -28,6 +28,13 @@ class MachineManager:
     def getMachine(self, index):
         return self.machinesArr[index - 1]
 
+    def getMachineByName(self, name):
+        returnMachine = False
+        for machine in self.machinesArr:
+            if machine.getName() == name:
+                return machine
+        return returnMachine
+
     def printStatus(self):
         status = ""
         machineNum = 1
@@ -59,8 +66,9 @@ class MachineManager:
                 nameExist = True
         return nameExist
 
-    def useMachine(self, index, username, chatId, setting):
-        validUse = self.machinesArr[index - 1].useMachine(username, chatId, setting)
+    def useMachine(self, name, username, chatId, setting):
+        machine = self.getMachineByName(name)
+        validUse = machine.useMachine(username, chatId, setting)
         self.onChange()
         return validUse
 
