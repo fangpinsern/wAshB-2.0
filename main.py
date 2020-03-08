@@ -7,12 +7,13 @@ import pickle
 from session.session import Session
 from machineFront.machineFront import MachineFront
 from machineManager.machineManager import MachineManager
+from admin.adminManager import AdminManager
 from botUtils.keyboards import mainMenuKeyboard, startKeyboard, restartKeyboard
 from botUtils.messages import startMessage, useMachineQuestion, machineInUseError, machineDoesNotExistError, invalidSettingError, invalidUserError, invalidMachineError, invalidInputError, userNotUsingMachinesError, doneWithMachineMessage, machineInfoMessage
 from datetime import datetime
 
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 # Enable logging
 logging.basicConfig(level=logging.INFO,
@@ -21,6 +22,7 @@ logger = logging.getLogger()
 
 mode = os.getenv("MODE")
 TOKEN = os.getenv("TOKEN")
+firstAdmin = os.getenv("ADMIN")
 if mode == "dev":
     def run(updater):
         updater.start_polling()
@@ -49,7 +51,7 @@ machine8 = MachineFront("front", "8")
 machineStorage = [machine1, machine2, machine3,
                   machine4, machine5, machine6, machine7, machine8]
 manager = MachineManager(machineStorage, "machineManager.pickle")
-
+adminManager = AdminManager(firstAdmin)
 userSessions = Session("sessionStorage.pickle")
 
 ## User command handlers
@@ -143,6 +145,36 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             chosenMachine = manager.getMachine(int(userInput))
             context.bot.sendMessage(chat_id=update.effective_user["id"], text=chosenMachine.getInfoMessage(), reply_markup=restartKeyboard)
             
+    elif (userSessions.get_last_command(username) == "/addAdmin"):
+        validAddAdmin = adminManager.addAdmin(userInput)
+        if validAddAdmin:
+            logger.info("User {} has been added as admin".format(userInput))
+            userSessions.end_session(username)
+            context.bot.sendMessage(
+                chat_id=update.effective_user["id"], text="Admin {} has been added".format(userInput), reply_markup=restartKeyboard)
+        else:
+            logger.info("The admin user may already exist. Or there is an error in adding")
+            context.bot.sendMessage(
+                chat_id=update.effective_user["id"], text="User may already be an admin. use /show to see your your admins!", reply_markup=restartKeyboard)
+
+    elif (userSessions.get_last_command(username) == "/removeAdmin"):
+        if adminManager.isMaster(userInput):
+            logger.info("Master tried to remove himself")
+            context.bot.sendMessage(
+                chat_id=update.effective_user["id"], text="You cant remove master from admin...", reply_markup=restartKeyboard)
+        
+        else: 
+            validRemoveAdmin = adminManager.removeAdmin(userInput)
+            if validRemoveAdmin:
+                logger.info("User {} has been removed as admin".format(userInput))
+                userSessions.end_session(username)
+                context.bot.sendMessage(
+                    chat_id=update.effective_user["id"], text="Admin {} has been removed".format(userInput), reply_markup=restartKeyboard)
+            else:
+                logger.info("The admin user does not exist. Or there is an error in removing")
+                context.bot.sendMessage(
+                    chat_id=update.effective_user["id"], text="User is not an admin. Use /show to see your your admins!", reply_markup=restartKeyboard)
+    
     else:
         update.message.reply_text(invalidInputError)
 
@@ -188,7 +220,7 @@ def print_sessions(update: Update, context: CallbackContext):
 
 
 
-
+## Scheduling reminders
 def callback_minute(context: CallbackContext):
     now = datetime.now()
     machinesInUse = manager.getMachinesInUse()
@@ -204,11 +236,48 @@ def callback_minute(context: CallbackContext):
                 manager.onChange()
     logger.info("Scheduler have ran {}".format(now))
 
+## masterHandlers
+def add_admin_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if (adminManager.isMaster(username)):
+        userSessions.start_session(username, "/addAdmin")
+        logger.info("User {} would like to add admin users".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Please enter the username of the new admin", reply_markup=ReplyKeyboardRemove())       
+    else: 
+        logger.info("User {} tried to access root/admin priviledges".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have root/admin privileges", reply_markup=restartKeyboard)
+
+def remove_admin_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.isMaster(username):
+        userSessions.start_session(username, "/removeAdmin")
+        logger.info("User {} would like to remove admin users".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Please enter the username you would like to remove", reply_markup=adminManager.getAdminKeyboard())
+    else:
+        logger.info("User {} tried to access root/admin priviledges".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have root/admin privileges", reply_markup=restartKeyboard)  
+
+def show_admin_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.isMaster(username):
+        logger.info("User {} would like to see the list of admins".format(username))
+        listOfAdmins = adminManager.getListOfAdmins()
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text=listOfAdmins, reply_markup=restartKeyboard)
+
+        
+
 
 if __name__ == '__main__':
     logger.info("Starting bot")
     updater = Updater(TOKEN, use_context=True)
     j = updater.job_queue
+    
+    # User commands
     updater.dispatcher.add_handler(CommandHandler("start", start_handler))
     updater.dispatcher.add_handler(CommandHandler("use", use_handler))
     updater.dispatcher.add_handler(CommandHandler("status", status_handler))
@@ -216,6 +285,12 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("restart", restart_handler))
     updater.dispatcher.add_handler(CommandHandler("done", done_handler))
     updater.dispatcher.add_handler(CommandHandler("info", info_handler))
+
+    # master commands
+    updater.dispatcher.add_handler(CommandHandler("addAdmin", add_admin_handler))
+    updater.dispatcher.add_handler(CommandHandler("removeAdmin", remove_admin_handler))
+    updater.dispatcher.add_handler(CommandHandler("show", show_admin_handler))
+    
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 
