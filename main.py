@@ -8,7 +8,7 @@ from session.session import Session
 from machineFront.machineFront import MachineFront
 from machineManager.machineManager import MachineManager
 from admin.adminManager import AdminManager
-from botUtils.keyboards import mainMenuKeyboard, startKeyboard, restartKeyboard, machineTypeKeyboard
+from botUtils.keyboards import mainMenuKeyboard, startKeyboard, restartKeyboard, machineTypeKeyboard, adminCommandsKeyboard, mainMenuAdminKeyboard
 from botUtils.messages import startMessage, useMachineQuestion, machineInUseError, machineDoesNotExistError, invalidSettingError, invalidUserError, invalidMachineError, invalidInputError, userNotUsingMachinesError, doneWithMachineMessage, machineInfoMessage
 from datetime import datetime
 
@@ -57,8 +57,11 @@ userSessions = Session("sessionStorage.pickle")
 ## User command handlers
 def start_handler(update: Update, context: CallbackContext):
     logger.info("User {} started bot".format(update.effective_user["id"]))
+    menuKeyboard = mainMenuKeyboard
+    if adminManager.adminIdExist(update.effective_user["username"]):
+        menuKeyboard = mainMenuAdminKeyboard
     context.bot.sendMessage(
-        chat_id=update.effective_user["id"], text=startMessage, reply_markup=mainMenuKeyboard)
+        chat_id=update.effective_user["id"], text=startMessage, reply_markup=menuKeyboard)
 
 
 def restart_handler(update: Update, context: CallbackContext):
@@ -143,6 +146,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
     elif (userSessions.get_last_command(username) == "/info"):
         if(manager.nameExist(userInput)):
             chosenMachine = manager.getMachineByName(userInput)
+            userSessions.end_session(username)
             context.bot.sendMessage(chat_id=update.effective_user["id"], text=chosenMachine.getInfoMessage(), reply_markup=restartKeyboard)
             
     elif (userSessions.get_last_command(username) == "/addAdmin"):
@@ -177,7 +181,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
 
     elif (userSessions.get_last_command(username) == "/addMachineType"):
         if adminManager.adminIdExist(username):
-            if(userInput != "front" or userInput != "top"):
+            if(userInput != "front" and userInput != "top"):
                 context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine Type invalid. Please use the options given", reply_markup=machineTypeKeyboard)
             else:
                 userSessions.update_session(username, "/addMachineName")
@@ -196,9 +200,19 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 manager.addMachine(newMachine)
                 logger.info("Machine has been added")
                 userSessions.end_session(username)
-                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine has been added! You can see it using the /status command", reply_markup=ReplyKeyboardRemove())
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine has been added! You can see it using the /status command", reply_markup=restartKeyboard)
 
-    
+    elif (userSessions.get_last_command(username) == "/removeMachine"):
+        if adminManager.adminIdExist(username):
+            validRemoveMachine = manager.removeMachineByName(userInput)
+            if validRemoveMachine:
+                logger.info("User {} would like to remove machine {}".format(username, userInput))
+                userSessions.end_session(username)
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine has been removed! You can check by using the /status command", reply_markup=restartKeyboard)
+            else:
+                logger.info("User {} would like to remove machine {}".format(username, userInput))
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machines does not exist. Please try again! The machine names should be provided at the keyboard. If not, you may want to restart the process", reply_markup=restartKeyboard)
+
     else:
         update.message.reply_text(invalidInputError)
 
@@ -295,6 +309,11 @@ def show_admin_handler(update: Update, context: CallbackContext):
 
 
 # AdminHandlers
+def accessAdminCommands(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.adminIdExist(username):
+        context.bot.sendMessage(chat_id=update.effective_user["id"], text="You are in the admin controls", reply_markup=adminCommandsKeyboard)
+
 def add_machine_handler(update: Update, context: CallbackContext):
     username = update.effective_user["username"]
     if adminManager.adminIdExist(username):
@@ -304,15 +323,20 @@ def add_machine_handler(update: Update, context: CallbackContext):
             chat_id=update.effective_user["id"], text="What is the type of the machine?", reply_markup=machineTypeKeyboard)  
     else:
         logger.info("User {} does not have the rights to add machines".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have the rights to this command", reply_markup=restartKeyboard)
 
-# def add_machine_handler(update: Update, context: CallbackContext):
-#     username = update.effective_user["username"]
-#     if adminManager.adminIdExist(username):
-#         logger.info("User {} would like to add machines".format(username))
-#         context.bot.sendMessage(
-#             chat_id=update.effective_user["id"], text="Name the machine", reply_markup=ReplyKeyboardRemove())  
-#     else:
-#         logger.info("User {} does not have the rights to add machines".format(username))
+def remove_machine_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.adminIdExist(username):
+        logger.info("User {} would like to remove machines".format(username))
+        userSessions.start_session(username, "/removeMachine")
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Which machine would you like to remove?", reply_markup=manager.getKeyboard())
+    else:
+        logger.info("User {} does noe have rights to remove machines".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have the rights to this command", reply_markup=restartKeyboard)
 
         
 
@@ -338,6 +362,8 @@ if __name__ == '__main__':
 
     # admin commands
     updater.dispatcher.add_handler(CommandHandler("addMachine", add_machine_handler))
+    updater.dispatcher.add_handler(CommandHandler("removeMachine", remove_machine_handler))
+    updater.dispatcher.add_handler(CommandHandler("config", accessAdminCommands))
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 

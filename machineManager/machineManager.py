@@ -106,7 +106,7 @@ class MachineManager:
 
     def getKeyboard(self):
         keyboardMain = []
-        numberOfPairs = math.ceil(len(self.machinesArr)/2)
+        numberOfPairs = math.ceil((len(self.machinesArr))/2)
         for i in range(numberOfPairs):
             keyboardMain.append([])
         rowCount = 0
@@ -117,7 +117,8 @@ class MachineManager:
                 count = count + 1
             else:
                 rowCount = rowCount + 1
-                count = 0
+                keyboardMain[rowCount].append(machine.getName())
+                count = 1
 
         keyboardMain.append(['/restart'])
         return ReplyKeyboardMarkup(keyboardMain)
@@ -139,5 +140,18 @@ class MachineManager:
             validAddMachine=True
 
         return validAddMachine
+
+    def removeMachineByName(self, machineName):
+        validRemoveMachine = False
+        if self.nameExist(machineName):
+            for machine in self.machinesArr:
+                if machineName == machine.getName():
+                    self.machinesArr.remove(machine)
+                    validRemoveMachine = True
+                    break
+
+        self.onChange()
+        return validRemoveMachine
+
         
 
