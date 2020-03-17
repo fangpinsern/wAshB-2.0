@@ -1,7 +1,72 @@
 from datetime import datetime, timedelta
 
-
 class MachineFront:
+    """
+    A class used to represent a Machine.
+
+    ...
+
+    Attributes
+    ----------
+    name: str
+        name of the machine
+    inUse: boolean
+        true if the machine is use
+        false if th machine is not in use
+    startTime: dateTime
+        time that the machine start to be used
+        default is 0 if unused
+    endTime: dateTime
+        time which the machine should be done with use
+        default is 0 if unused
+    username: str
+        username of user using the machine
+        empty string if the machine is left unused
+    chatId: int
+        chatId of the user using the machine.
+        0 if machine is unused
+    hasReminded: boolean
+        true if the user of the machine has already been reminded that the
+        time is up
+        else false
+    typeOfMachine: str
+        what machine type is it
+    settings : list
+        a list setting for the machine and their corresponding timings
+        format: [name_of_setting, duration]
+    settingsKeyboard: list
+        keyboard that contains the setting of the machine
+    infoMessage: str
+        information about the machine
+
+    Methods
+    -------
+    isInUser()
+        returns true if the machine is in use
+        else return false
+    getStartTime()
+        gets the start time of usage of machine 
+    getEndTime()
+        gets the end time of the usage of the machine
+    getInfoMessage()
+        gets the infomation message of the machine
+    getChatId()
+        gets the chatId of the person using the machine
+    getName()
+        gets the name of the machine
+    useMachine(username, chatId, setting)
+        change status of inUse from False to True
+    doneUse(chatId)
+        change status of inUse from True to False provided
+        that the chatId is the chatId using the machine
+    getTimeing(setting)
+        get the timing of the setting that is chosen
+    checkSettingExist(setting)
+        returns True if setting exists
+        else False
+    printStatus()
+        returns a string describing the status of the machine currently
+    """
 
     frontSettings = [["Cotton 60 with Prewash", 121], ["Cottons 90", 133], ["Cottons 40", 80], ["Cottons Cold", 80], ["Cottons Eco 60", 132], ["Cottons Eco 40", 120], [
         "Synthetics 60", 113], ["Synthetics 40", 105], ["Synthetics Cold", 66], ["Delicates 30", 65], ["Woolen 40", 54], ["Hand Wash 20", 41], ["Mini 30", 29]]

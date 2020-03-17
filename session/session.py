@@ -2,6 +2,37 @@ import pickle
 import os
 
 class Session:
+    """
+    A class used to represent a the session of each user.
+
+    ...
+
+    Attributes
+    ----------
+    sessions: list
+        list of all the people that are having a session with the program
+    filename: str
+        name of the file that will save the information of the ongoing sessions
+
+    Methods
+    -------
+    user_exist(username)
+        checks if the user with the username has a current ongoing session
+        return True if the username is true
+        else false
+    start_session(username, last_input)
+        starts a session to be managed by the sessions
+    get_last_command(username)
+        get the last command input of the user
+    end_session(username)
+        end the ongoing session by user
+    update_session(username)
+        updates the session of the user to a new state
+    add_passing_arguments(username, passedArgs)
+        add data (passedArgs) that you want to send from one session to the next
+    get_passing_arguments(username)
+        get the argument passed by other sessions
+    """
 
     useSteps = []
     sessions = []

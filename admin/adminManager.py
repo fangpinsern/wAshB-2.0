@@ -1,7 +1,33 @@
 from telegram import ReplyKeyboardMarkup
 
 class AdminManager:
+    """
+    A class used to represent a manger for admins.
 
+    ...
+
+    Attributes
+    ----------
+    adminArr : list
+        list of all the people that are admin
+    master: integer
+        the master user which has the admin rights to the admins
+
+    Methods
+    -------
+    isMaster(masterId)
+        returns True if masterId is the master ID
+    addAdmin(username)
+        adds username to the list of admins
+    removeAdmin(username)
+        removes admin from the list of admins
+    getAdminKeyboard()
+        give the ReplyKeyboardMarkup of the list of admins
+    getListOfAdmins()
+        return a string with information of who is an admin
+    adminIdExist(username)
+        chaecks if the username is in the admin manager
+    """
     adminArr = []
     master = 0
     

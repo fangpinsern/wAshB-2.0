@@ -6,6 +6,51 @@ from telegram import ReplyKeyboardMarkup
 
 class MachineManager:
 
+    """
+    A class used to represent a MachineManager.
+
+    ...
+
+    Attributes
+    ----------
+    machineArr : list
+        a list of machines that are managed by this manager
+    filename : str
+        name of the file that will save the information of the machineManager
+
+    Methods
+    -------
+    getMachineByName(name)
+        gets the machine instance with the name provided in the parameter
+    printStatus()
+        Prints the status of all the machines being managed by this manager
+    getMachineUsedByUser(chatId)
+        gives a list of machines that are being used by the user with the 
+        given chatId
+    getMachinesInUse()
+        gives a list of the machines that are in use
+    nameExist(name)
+        checks if the name given in the parameter exists in the machines 
+        managed by this manager
+    useMachine(name, username, chatId, setting)
+        to use the machine with the name given in the parameter
+    doneUse(name, chatId)
+        signals manager that user with chatId has finished using the machine 
+        with the name in the parameter
+    isAllInUse()
+        returns True what all the machines in the manager is used
+        else, returns False
+    getKeyboard() 
+        returns the KeyboardMarkUp with the names of the machines
+    getMachineUsedByUserKeyboard(chatId)
+        returns KeyboardMarkUp with the names of machines used
+        by the chatId in parameters
+    addMachine(machine)
+        adds machine to be managed by the manager
+    removeMachineByName(machineName)
+        removes machine from being managed by manager
+    """
+
     machinesArr=[]
     filename = ""
 
