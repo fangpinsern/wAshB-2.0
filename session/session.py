@@ -61,6 +61,12 @@ class Session:
         # check is session exist
         if (not self.user_exist(username)):
             self.sessions.append([username, last_input, []])
+        else:
+            for session in self.sessions:
+                if session[0] == username:
+                    session[1] = last_input
+                    session[2] = []
+                    break
         self.onChange()
 
     # Get last input of the user from the session

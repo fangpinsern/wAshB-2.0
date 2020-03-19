@@ -12,4 +12,4 @@ restartKeyboard = ReplyKeyboardMarkup([['/restart']])
 
 machineTypeKeyboard = ReplyKeyboardMarkup([["front"], ["top"]])
 
-adminCommandsKeyboard = ReplyKeyboardMarkup([["/addMachine"], ["/removeMachine"], ["/restart"]])
+adminCommandsKeyboard = ReplyKeyboardMarkup([["/addMachine"], ["/removeMachine"], ["/ban", "/viewBan"],["/restart"]])

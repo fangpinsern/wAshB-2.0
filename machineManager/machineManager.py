@@ -15,6 +15,8 @@ class MachineManager:
     ----------
     machineArr : list
         a list of machines that are managed by this manager
+    bannedUsers : list
+        a list of users that are banned from using machines managed by this manager
     filename : str
         name of the file that will save the information of the machineManager
 
@@ -49,9 +51,17 @@ class MachineManager:
         adds machine to be managed by the manager
     removeMachineByName(machineName)
         removes machine from being managed by manager
+    banUser(username)
+        add user to the bannedUsers list
+    isBannedUser(username)
+        returns True if the user is in the banned list
+        else returns False
+    getBannedUserString()
+        gives a formatted string of users that are banned
     """
 
-    machinesArr=[]
+    machinesArr = []
+    bannedUsers = []
     filename = ""
 
     #addMachine
@@ -197,6 +207,23 @@ class MachineManager:
 
         self.onChange()
         return validRemoveMachine
+
+    def banUser(self, username):
+        self.bannedUsers.append(username)
+
+    def isBannedUser(self, username):
+        return username in self.bannedUsers
+
+    def getBannedUserString(self):
+        if len(self.bannedUsers) == 0:
+            return "No one is banned at the moment"
+        else:     
+            s = ""
+            count = 1
+            for user in self.bannedUsers:
+                s = s + "{}. {}\n".format(str(count), user)
+                count = count + 1
+            return s
 
         
 

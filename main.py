@@ -56,9 +56,13 @@ userSessions = Session("sessionStorage.pickle")
 
 ## User command handlers
 def start_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if manager.isBannedUser(username):
+        stopBannedUsers(update, context)
+        return
     logger.info("User {} started bot".format(update.effective_user["id"]))
     menuKeyboard = mainMenuKeyboard
-    if adminManager.adminIdExist(update.effective_user["username"]):
+    if adminManager.adminIdExist(username):
         menuKeyboard = mainMenuAdminKeyboard
     context.bot.sendMessage(
         chat_id=update.effective_user["id"], text=startMessage, reply_markup=menuKeyboard)
@@ -66,7 +70,6 @@ def start_handler(update: Update, context: CallbackContext):
 
 def restart_handler(update: Update, context: CallbackContext):
     logger.info("User {} restarted bot".format(update.effective_user["id"]))
-
     username = update.effective_user["username"]
     if(userSessions.user_exist(username)):
         userSessions.end_session(username)
@@ -77,6 +80,9 @@ def restart_handler(update: Update, context: CallbackContext):
 
 def use_handler(update: Update, context: CallbackContext):
     username = update.effective_user["username"]
+    if manager.isBannedUser(username):
+        stopBannedUsers(update, context)
+        return
     logger.info("User {} is using machine".format(username))
     userSessions.start_session(username, "/use")
     context.bot.sendMessage(
@@ -91,8 +97,13 @@ def choose_machine_handler(update: Update, context: CallbackContext):
     userInput = update.message.text
     username = update.effective_user["username"]
     chatId = update.effective_user["id"]
+    isAdmin = adminManager.adminIdExist(username)
+    lastCommand = userSessions.get_last_command(username)
 
-    if (userSessions.get_last_command(username) == "/use"):
+    if manager.isBannedUser(username):
+        stopBannedUsers(update, context)
+        return
+    if (lastCommand == "/use"):
         if(manager.nameExist(userInput)):
             chosenMachine = manager.getMachineByName(userInput)
             if (chosenMachine.isInUse()):
@@ -111,7 +122,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             context.bot.sendMessage(
                 chat_id=update.effective_user["id"], text=machineDoesNotExistError, reply_markup=manager.getKeyboard())
 
-    elif (userSessions.get_last_command(username) == "machineNumber"):
+    elif (lastCommand == "machineNumber"):
         chosenMachineNum = userSessions.get_passing_arguments(username)[0]
         if(manager.useMachine(chosenMachineNum, username, chatId, userInput)):
             logger.info("Machine start time is {} and end time is {}".format(
@@ -128,7 +139,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                     chat_id=update.effective_user["id"], text=invalidSettingError, reply_markup=settingKeyboard)
 
 
-    elif (userSessions.get_last_command(username) == "/done"):
+    elif (lastCommand == "/done"):
         if(manager.nameExist(userInput)):
             validDoneUse = manager.doneUse(userInput, chatId)
             if validDoneUse:
@@ -143,13 +154,13 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             context.bot.sendMessage(
                 chat_id=update.effective_user["id"], text=invalidMachineError, reply_markup=manager.getMachineUsedByUserKeyboard(chatId))
 
-    elif (userSessions.get_last_command(username) == "/info"):
+    elif (lastCommand == "/info"):
         if(manager.nameExist(userInput)):
             chosenMachine = manager.getMachineByName(userInput)
             userSessions.end_session(username)
             context.bot.sendMessage(chat_id=update.effective_user["id"], text=chosenMachine.getInfoMessage(), reply_markup=restartKeyboard)
             
-    elif (userSessions.get_last_command(username) == "/addAdmin"):
+    elif (lastCommand == "/addAdmin"):
         validAddAdmin = adminManager.addAdmin(userInput)
         if validAddAdmin:
             logger.info("User {} has been added as admin".format(userInput))
@@ -161,7 +172,7 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             context.bot.sendMessage(
                 chat_id=update.effective_user["id"], text="User may already be an admin. use /show to see your your admins!", reply_markup=restartKeyboard)
 
-    elif (userSessions.get_last_command(username) == "/removeAdmin"):
+    elif (lastCommand == "/removeAdmin"):
         if adminManager.isMaster(userInput):
             logger.info("Master tried to remove himself")
             context.bot.sendMessage(
@@ -179,8 +190,8 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 context.bot.sendMessage(
                     chat_id=update.effective_user["id"], text="User is not an admin. Use /show to see your your admins!", reply_markup=restartKeyboard)
 
-    elif (userSessions.get_last_command(username) == "/addMachineType"):
-        if adminManager.adminIdExist(username):
+    elif (lastCommand == "/addMachineType"):
+        if isAdmin:
             if(userInput != "front" and userInput != "top"):
                 context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine Type invalid. Please use the options given", reply_markup=machineTypeKeyboard)
             else:
@@ -189,8 +200,8 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 logger.info("User {} has named the machine {}".format(username, userInput))
                 context.bot.sendMessage(chat_id=update.effective_user["id"], text="What would you name the machine?", reply_markup=restartKeyboard)
 
-    elif (userSessions.get_last_command(username) == "/addMachineName"):
-        if adminManager.adminIdExist(username):
+    elif (lastCommand == "/addMachineName"):
+        if isAdmin:
             machineType = userSessions.get_passing_arguments(username)[0]
             if manager.nameExist(userInput):
                 logger.info("Machine name exist")
@@ -202,8 +213,8 @@ def choose_machine_handler(update: Update, context: CallbackContext):
                 userSessions.end_session(username)
                 context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machine has been added! You can see it using the /status command", reply_markup=restartKeyboard)
 
-    elif (userSessions.get_last_command(username) == "/removeMachine"):
-        if adminManager.adminIdExist(username):
+    elif (lastCommand == "/removeMachine"):
+        if isAdmin:
             validRemoveMachine = manager.removeMachineByName(userInput)
             if validRemoveMachine:
                 logger.info("User {} would like to remove machine {}".format(username, userInput))
@@ -212,6 +223,19 @@ def choose_machine_handler(update: Update, context: CallbackContext):
             else:
                 logger.info("User {} would like to remove machine {}".format(username, userInput))
                 context.bot.sendMessage(chat_id=update.effective_user["id"], text="Machines does not exist. Please try again! The machine names should be provided at the keyboard. If not, you may want to restart the process", reply_markup=restartKeyboard)
+
+    elif (lastCommand == "/banUser"):
+        if isAdmin:
+            if userInput == username:
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="You cannot ban yourself")
+                return
+            elif adminManager.adminIdExist(userInput):
+                context.bot.sendMessage(chat_id=update.effective_user["id"], text="You cannot ban an admin. Please remove this admin before banning")
+                return
+            manager.banUser(userInput)
+            logger.info("User {} has banned {}".format(username, userInput))
+            userSessions.end_session(username)
+            context.bot.sendMessage(chat_id=update.effective_user["id"], text="User {} has been banned!".format(userInput))
 
     else:
         update.message.reply_text(invalidInputError)
@@ -226,10 +250,12 @@ def status_handler(update: Update, context: CallbackContext):
 
 def done_handler(update: Update, context: CallbackContext):
     username = update.effective_user["username"]
-    chatId = update.effective_user["id"]
-    userExist = False
-    machinesInUse = manager.getMachineUsedByUser(chatId)
+    if manager.isBannedUser(username):
+        stopBannedUsers(update, context)
+        return
 
+    chatId = update.effective_user["id"]
+    machinesInUse = manager.getMachineUsedByUser(chatId)
     if len(machinesInUse) == 0:
         logger.info("User {} made an invalid action".format(chatId))
         context.bot.sendMessage(
@@ -334,11 +360,39 @@ def remove_machine_handler(update: Update, context: CallbackContext):
         context.bot.sendMessage(
             chat_id=update.effective_user["id"], text="Which machine would you like to remove?", reply_markup=manager.getKeyboard())
     else:
-        logger.info("User {} does noe have rights to remove machines".format(username))
+        logger.info("User {} does not have rights to remove machines".format(username))
         context.bot.sendMessage(
             chat_id=update.effective_user["id"], text="You do not have the rights to this command", reply_markup=restartKeyboard)
 
-        
+def banUser_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.adminIdExist(username):
+        logger.info("User {} would like to ban a user".format(username))
+        userSessions.start_session(username, "/banUser")
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Please let me know the username of the person you would like to ban")
+    else:
+        logger.info("User {} does not have rights to remove ban users".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have the rights to this command", reply_markup=restartKeyboard)
+
+def viewBannedUsers_handler(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    if adminManager.adminIdExist(username):
+        logger.info("User {} would like to check banned users".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="Banned Users:\n" + manager.getBannedUserString())
+    else:
+        logger.info("User {} does not have rights to view this".format(username))
+        context.bot.sendMessage(
+            chat_id=update.effective_user["id"], text="You do not have the rights to this command", reply_markup=restartKeyboard)
+
+# util Functions
+def stopBannedUsers(update: Update, context: CallbackContext):
+    username = update.effective_user["username"]
+    context.bot.sendMessage(chat_id=update.effective_user["id"], text="You have been banned!", reply_markup=ReplyKeyboardRemove())
+    logger.info("Banned user {} is trying to use the bot".format(username))
+    return
 
 
 if __name__ == '__main__':
@@ -364,6 +418,8 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler("addMachine", add_machine_handler))
     updater.dispatcher.add_handler(CommandHandler("removeMachine", remove_machine_handler))
     updater.dispatcher.add_handler(CommandHandler("config", accessAdminCommands))
+    updater.dispatcher.add_handler(CommandHandler("ban", banUser_handler))
+    updater.dispatcher.add_handler(CommandHandler("viewBan", viewBannedUsers_handler))
     updater.dispatcher.add_handler(MessageHandler(
         Filters.text, choose_machine_handler))
 
